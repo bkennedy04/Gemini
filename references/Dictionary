@@ -1,0 +1,39 @@
+Dictionary
+
+Demographics table:
+this table contains contextual information about a sample of gemini users.
+the target class we are trying to predict is LEVEL
+
+EXCHANGE_ACCOUNT_ID - unique identifier for a person
+level - the target class we are trying to predict
+CREATED_AT - date the account was created
+FIRST_VERIFIED_AT - date the account was verified
+STATE_CODE - two letter state that the user of the account resides in
+COUNTRY_CODE - two letter country code the user resides in
+BIRTH_YEAR - year the user of the account was born
+OCCUPATION - stated occupation of the user
+BROWSER_COUNT - number of distinct browsers user has used
+OS_COUNT - number of distinct operating systems detected
+TOTAL_DEVICES - total count of distinct devices used by the account
+SESSION_COUNT - count of sessions initiated by the user
+COUNT_BANKS - count of bank accounts attached to user
+
+exposure table:
+this table contains aggregated information about the source and destination of user's transfers
+
+EXCHANGE_ACCOUNT_ID - unique identifier for a person
+SENT_INDIRECT_EXPOSURE - total outgoing volume (multiple hops before arriving at destination) to specified cluster
+SENT_DIRECT_EXPOSURE - direct direct send volume to specified cluster
+RECEIVED_INDIRECT_EXPOSURE - total incoming volume (multiple hops before arriving at Gemini) from specified cluster
+RECEIVED_DIRECT_EXPOSURE - total receiving volume (direct receive) from specified cluster
+cluster_category - type of service (ie exchange, merchant, private wallet etc)
+cluster_name - name of the service
+
+transfers table:
+this table contains a sample of transfer logs in 2020
+
+ACCOUNT_ID - unique identifier for a person
+TX_TIME - timestamp of a transfer
+AMOUNT - quantity transfered
+currency - currency of the transfer
+tx_type - type of the transfer (deposit/withdrawal/etc)

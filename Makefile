@@ -34,7 +34,7 @@ modeling: data/interim/demographics_train.csv models/lgbm_model.pk
 
 ## Prediction
 all: requirements feature_engineering modeling
-	python src/models/test_model.py
+	python src/models/predict_model.py
 
 ## Delete all compiled Python files
 clean:

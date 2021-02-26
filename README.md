@@ -62,7 +62,7 @@ Navigate to /src/models and run train_model.py. This will train and serialize a 
     
 Now run predict_model.py. This will output the predictions in the data/results folder.
 
-	`python train_model.py`
+	`python predict_model.py`
 
 --------
 

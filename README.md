@@ -14,8 +14,6 @@ Project Organization
     │   ├── raw            <- The original, immutable data dump.
     │   └── results        <- Prediction output.
     │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-    │
     ├── logs               <- Log files
     │
     ├── models             <- Trained and serialized models, model predictions, or model summaries

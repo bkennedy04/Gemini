@@ -11,7 +11,8 @@ Project Organization
     ├── data
     │   ├── interim        <- Intermediate data that has been transformed.
     │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
+    │   ├── raw            <- The original, immutable data dump.
+    │   └── results        <- Prediction output.
     │
     ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
     │
@@ -37,6 +38,7 @@ Project Organization
             │                 predictions
             ├── predict_model.py
             └── train_model.py
+         
 
 
 

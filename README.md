@@ -39,8 +39,30 @@ Project Organization
             ├── predict_model.py
             └── train_model.py
          
+Suggested Steps	to Reproduce	
+--------
 
+    `make all`   
+    
+----------------------------------------    
+    OR
+----------------------------------------
 
+ Install required packages. 
+
+    `pip install -r requirements.txt`
+
+Navigate to /src/features and run build_features.py script. This will process the external data and export to data/interim.
+
+	`python build_features.py`
+	
+Navigate to /src/models and run train_model.py. This will train and serialize a light gbm model.
+
+	`python train_model.py`
+    
+Now run predict_model.py. This will output the predictions in the data/results folder.
+
+	`python train_model.py`
 
 --------
 

@@ -42,12 +42,6 @@ Project Organization
 Suggested Steps	to Reproduce	
 --------
 
-    `make all`   
-    
-----------------------------------------    
-    OR
-----------------------------------------
-
  Install required packages. 
 
     `pip install -r requirements.txt`
@@ -63,6 +57,14 @@ Navigate to /src/models and run train_model.py. This will train and serialize a 
 Now run predict_model.py. This will output the predictions in the data/results folder.
 
 	`python predict_model.py`
+
+----------------------------------------    
+    OR
+----------------------------------------
+
+   	 `make all`   
+    
+
 
 --------
 

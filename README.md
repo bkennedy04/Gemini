@@ -61,8 +61,16 @@ Now run predict_model.py. This will output the predictions in the data/results f
 ----------------------------------------
 
    	 `make all`   
-    
+	 
 
+Future Improvements
+------------
+Other ideas and TODOs not currently implemented given time constraint:
+* Further model tuning using grid search and cross validation
+* Better grouping of free text fields (use ntlk to autocorrect mispelled words)
+* Use Latent Dirichlet Allocation (LDA) to come up with more meaningful occupation grouping
+* Use sphinx to generate auto documentation
+* Create regression testing framework
 
 --------
 

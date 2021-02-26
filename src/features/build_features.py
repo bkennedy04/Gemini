@@ -1,3 +1,4 @@
+import datetime
 import logging
 import nltk
 from nltk.corpus import words
@@ -152,6 +153,17 @@ def clean_demographics(dem):
     dem['OCCUPATION_GROUP'] = dem['OCCUPATION_GROUP'].apply(occupation_grouping, other=other_keywords)
     # not applicable state code (non US)
     dem.loc[(dem['STATE_CODE'] == 'NAN') & (dem['COUNTRY_CODE'] != 'NAN') & (dem['COUNTRY_CODE'] != 'US'), 'STATE_CODE'] = 'NON US'
+    # create age 
+    dem['age'] = datetime.datetime.now().year - dem.BIRTH_YEAR
+    # convert to datetime
+    dem['CREATED_AT'] =  pd.to_datetime(dem['CREATED_AT'], errors='coerce')
+    dem['FIRST_VERIFIED_AT'] =  pd.to_datetime(dem['FIRST_VERIFIED_AT'], errors='coerce')
+    # days to verify
+    dem['days_to_verify'] = dem['CREATED_AT'] - dem['FIRST_VERIFIED_AT']
+    dem['days_to_verify'] = dem['days_to_verify'].apply(lambda x: x.days)
+    # age of account
+    dem['days_since_creation'] = datetime.datetime.now() - dem['CREATED_AT']
+    dem['days_since_creation'] = dem['days_since_creation'].apply(lambda x: x.days)
 
     return dem
 

@@ -19,7 +19,7 @@ def read_data(path, ext):
     """
     dem = pd.read_csv(path + 'demographics' + ext)
     exp = pd.read_csv(path + 'exposure' + ext)
-    trans = pd.read_csv(path + 'transfers' + ext)
+    trans = pd.read_csv(path + 'transfers' + ext, low_memory=False)
 
     return dem, exp, trans
 
@@ -79,9 +79,10 @@ def occupation_grouping(occupation, other=None):
         occupation group
 
     """
-    tech_keywords = ['ENGINEER', 'IT', 'SOFTWARE', 'TECHNOLOGY', 'DATA', 'DEVELOPER', 'PROGRAMMER', 'TECH', 'WEB', 'COMPUTER', 'DBA', 'SCIENTIST']
+    tech_keywords = ['ENGINEER', 'IT', 'SOFTWARE', 'TECHNOLOGY', 'DATA', 'DEVELOPER', 'PROGRAMMER', 'TECH', 'WEB', 'COMPUTER', 
+                        'DBA', 'SCIENTIST', 'INFO']
     law_keywords = ['LAWYER', 'ATTORNEY', 'LEGAL']
-    medicine_keywords = ['PHYSICIAN', 'DOCTOR', 'SURGEON', 'DENTIST', 'PHARMACIST', 'MD', 'NURSE', 'RN', 'NURSING']
+    medicine_keywords = ['PHYSICIAN', 'DOCTOR', 'SURGEON', 'DENTIST', 'PHARMACIST', 'MD', 'NURSE', 'RN', 'NURSING', 'MEDICAL']
     self_keywords = ['SELF']
     sales_keywords = ['SALES']
     retired_keywords = ['RETIRED', 'RETIREE', 'RETIRE']
@@ -142,17 +143,17 @@ def clean_demographics(dem):
     """
     # clean text columns
     dem = clean_text_columns(dem, col_list=['STATE_CODE', 'COUNTRY_CODE', 'OCCUPATION'])
-	# apply occupation grouping based on keywords
-	dem['OCCUPATION_GROUP'] = dem['OCCUPATION'].apply(group_occupation)
-	# Group occupations that show up less than 10 times as 'OTHER'
-	dem['dummy'] = 1
-	occs = dem.groupby('OCCUPATION1').agg({'dummy':sum}).reset_index()
-	other_keywords = occs[occs['dummy'] < 10].OCCUPATION1.unique()
-	dem['OCCUPATION_GROUP'] = dem['OCCUPATION_GROUP'].apply(group_occupation, other=other_keywords)
-	# not applicable state code (non US)
-	dem.loc[(dem['STATE_CODE'] == 'NAN') & (dem['COUNTRY_CODE'] != 'NAN') & (dem['COUNTRY_CODE'] != 'US'), 'STATE_CODE'] = 'NON US'
+    # apply occupation grouping based on keywords
+    dem['OCCUPATION_GROUP'] = dem['OCCUPATION'].apply(occupation_grouping)
+    # Group occupations that show up less than 10 times as 'OTHER'
+    dem['dummy'] = 1
+    occs = dem.groupby('OCCUPATION_GROUP').agg({'dummy':sum}).reset_index()
+    other_keywords = list(occs[occs['dummy'] < 10].OCCUPATION_GROUP.unique())
+    dem['OCCUPATION_GROUP'] = dem['OCCUPATION_GROUP'].apply(occupation_grouping, other=other_keywords)
+    # not applicable state code (non US)
+    dem.loc[(dem['STATE_CODE'] == 'NAN') & (dem['COUNTRY_CODE'] != 'NAN') & (dem['COUNTRY_CODE'] != 'US'), 'STATE_CODE'] = 'NON US'
 
-	return dem
+    return dem
 
 
 def clean_exposures(exp):
@@ -164,42 +165,43 @@ def clean_exposures(exp):
         updated exposure dataframe
 
     """
-	# create dummy variables for cluster_category
-	exp = exp.merge(pd.get_dummies(exp[['cluster_category']]), left_index=True, right_index=True)
+    # create dummy variables for cluster_category
+    exp = exp.merge(pd.get_dummies(exp[['cluster_category']]), left_index=True, right_index=True)
+    exp['dummy'] = 1
 
-	# define aggregations
-	agg_dict = {
-	             'dummy':'sum', 
-	             'SENT_INDIRECT_EXPOSURE':'sum',
-	             'SENT_DIRECT_EXPOSURE':'sum',
-	             'RECEIVED_INDIRECT_EXPOSURE':'sum',
-	             'RECEIVED_DIRECT_EXPOSURE':'sum',
-	             'cluster_category':'nunique',
-	             'cluster_name':'nunique'
-	            }
-	clust_dict = {}
-	for clust in exp.cluster_category.unique():
-	    clust_dict['cluster_category_' + clust] = 'sum'
-	# add dummy variables to agg dict
-	agg_dict.update(clust_dict)	
+    # define aggregations
+    agg_dict = {
+                 'dummy':'sum', 
+                 'SENT_INDIRECT_EXPOSURE':'sum',
+                 'SENT_DIRECT_EXPOSURE':'sum',
+                 'RECEIVED_INDIRECT_EXPOSURE':'sum',
+                 'RECEIVED_DIRECT_EXPOSURE':'sum',
+                 'cluster_category':'nunique',
+                 'cluster_name':'nunique'
+                }
+    clust_dict = {}
+    for clust in exp.cluster_category.unique():
+        clust_dict['cluster_category_' + clust] = 'sum'
+    # add dummy variables to agg dict
+    agg_dict.update(clust_dict) 
 
-	# aggregate to account level
-	exp_agg = exp.groupby('EXCHANGE_ACCOUNT_ID').agg(agg_dict).rename(
-				columns={
-                	'dummy':'exposure_count',
-                	'SENT_INDIRECT_EXPOSURE':'SENT_INDIRECT_EXPOSURE_SUM',
-                	'SENT_INDIRECT_EXPOSURE':'SENT_INDIRECT_EXPOSURE_SUM',
-                	'SENT_DIRECT_EXPOSURE':'SENT_DIRECT_EXPOSURE_SUM',
-                	'RECEIVED_INDIRECT_EXPOSURE':'RECEIVED_INDIRECT_EXPOSURE_SUM',
-                	'RECEIVED_DIRECT_EXPOSURE':'RECEIVED_DIRECT_EXPOSURE_SUM',
-                	'cluster_category':'cluster_category_count',
-                	'cluster_name':'cluster_name_count'
+    # aggregate to account level
+    exp_agg = exp.groupby('EXCHANGE_ACCOUNT_ID').agg(agg_dict).rename(
+                columns={
+                    'dummy':'exposure_count',
+                    'SENT_INDIRECT_EXPOSURE':'SENT_INDIRECT_EXPOSURE_SUM',
+                    'SENT_INDIRECT_EXPOSURE':'SENT_INDIRECT_EXPOSURE_SUM',
+                    'SENT_DIRECT_EXPOSURE':'SENT_DIRECT_EXPOSURE_SUM',
+                    'RECEIVED_INDIRECT_EXPOSURE':'RECEIVED_INDIRECT_EXPOSURE_SUM',
+                    'RECEIVED_DIRECT_EXPOSURE':'RECEIVED_DIRECT_EXPOSURE_SUM',
+                    'cluster_category':'cluster_category_count',
+                    'cluster_name':'cluster_name_count'
                 }).reset_index()
     
-	# create averages
-	for col in [col for col in exp_agg.columns if '_SUM' in col]:
-	    exp_agg[col.replace('_SUM', "_AVG")] = exp_agg[col] / exp_agg['exposure_count']
-	    
+    # create averages
+    for col in [col for col in exp_agg.columns if '_SUM' in col]:
+        exp_agg[col.replace('_SUM', "_AVG")] = exp_agg[col] / exp_agg['exposure_count']
+        
     return exp_agg
 
 
@@ -213,20 +215,20 @@ def clean_transfers(transfers):
 
     """
     # drop rows with all nans
-	transfers.dropna(axis = 0, how = 'all', inplace = True)
-	# convert to int
-	transfers = transfers.astype({'ACCOUNT_ID':np.int64})
-	# convert to datetime
-	transfers['TX_TIME'] =  pd.to_datetime(transfers['TX_TIME'], errors='coerce')
-	# aggregate to account level and create features broken out by category
-	transfer_agg = pd.pivot_table(data=transfers, index=transfers.ACCOUNT_ID, columns=transfers.TYPE, aggfunc=('sum','nunique'))
-	transfer_agg.columns = transfer_agg.columns.to_series().str.join('_')
-	transfer_agg = transfer_agg.reset_index()
+    transfers.dropna(axis = 0, how = 'all', inplace = True)
+    # convert to int
+    transfers = transfers.astype({'ACCOUNT_ID':np.int64})
+    # convert to datetime
+    transfers['TX_TIME'] =  pd.to_datetime(transfers['TX_TIME'], errors='coerce')
+    # aggregate to account level and create features broken out by category
+    transfer_agg = pd.pivot_table(data=transfers, index=transfers.ACCOUNT_ID, columns=transfers.TYPE, aggfunc=('sum','nunique'))
+    transfer_agg.columns = transfer_agg.columns.to_series().str.join('_')
+    transfer_agg = transfer_agg.reset_index()
 
-    return trans_agg
+    return transfer_agg
 
 
-def main(input_path='../../data/raw/', output_path=='../../data/interim/', train=True):
+def main(input_path='../../data/raw/', output_path='../../data/interim/', train=True):
     """Orchestration of data cleaning and feature engineering.
 
     Args:
@@ -239,24 +241,27 @@ def main(input_path='../../data/raw/', output_path=='../../data/interim/', train
     """
     # define extension
     if train:
-    	ext = '_train.csv'
+        ext = '_train.csv'
+        desc = 'train'
     else:
-    	ext = '_test.csv'
+        ext = '_test.csv'
+        desc = 'test'
 
     # get data
-    dem, exp, trans = read_data(ext)
+    print('Reading ' + desc + ' data...')
+    dem, exp, trans = read_data(input_path, ext)
 
     # process data
+    print('Processing ' + desc + ' data...')
     dem_processed = clean_demographics(dem)
     exp_processed = clean_exposures(exp)
     trans_processed = clean_transfers(trans)
 
     # output processed data
+    print('Writing ' + desc + ' data...')
     dem_processed.to_csv(output_path + 'demographics' + ext, index=False)
     exp_processed.to_csv(output_path + 'exposure' + ext, index=False)
     trans_processed.to_csv(output_path + 'transfer' + ext, index=False)
-
-
 
 
 if __name__ == "__main__":
@@ -264,12 +269,23 @@ if __name__ == "__main__":
     dirname, filename = os.path.split(os.path.abspath(__file__))
 
     # Create logging file if DNE otherwise append to it
-    logging.basicConfig(filename=os.path.join(dirname, "../../logs/build_features.log"), level=logging.INFO)
+    logging.basicConfig(filename=os.path.join(dirname, "../../logs/build_features.log"), 
+            format='%(asctime)s %(levelname)-8s %(message)s',
+            level=logging.INFO,
+            datefmt='%Y-%m-%d %H:%M:%S')
 
     # prep train data
     main()
+    logging.info("Train data processed.")
+
     # prep test data
     main(train=False)
+    logging.info("Test data processed.")
+
+
+    print('Complete!')
+    logging.info("Feature engineering complete.")
+
 
 
 
